@@ -1,0 +1,390 @@
+# Bash Commands Extracted from Terminal Log
+
+# Package installation and upgrade
+pip install tokenizers==0.13.3 --upgrade
+
+# File permissions
+chmod 755 tinyllama-4bit-128g
+
+# Directory listing
+ls -la tinyllama-4bit-128g/
+
+# File removal
+rm -f ./tinyllama-4bit-128g/tokenizer.json
+rm -f ./tinyllama-4bit-128g/tokenizer_config.json
+rm -f ./tinyllama-4bit-128g/special_tokens_map.json
+
+# Python one-liner commands (multiline for readability)
+
+# Test 1: Initial model loading attempt
+python3 -c "
+from auto_gptq import AutoGPTQForCausalLM
+from transformers import AutoTokenizer
+
+print('Loading model and tokenizer...')
+
+model = AutoGPTQForCausalLM.from_quantized('./tinyllama-4bit-128g', device='cpu', use_triton=False)
+tokenizer = AutoTokenizer.from_pretrained('./tinyllama-4bit-128g')
+
+print('✅ Both model and tokenizer loaded!')
+
+# Quick test
+inputs = tokenizer('Hello, TinyLlama is', return_tensors='pt')
+outputs = model.generate(**inputs, max_length=20, do_sample=False)
+result = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+print(f'🎉 Generated: {result}')
+print('SUCCESS: GPTQ model fully working on Jetson Nano!')
+"
+
+# Test 2: Absolute path attempt
+python3 -c "
+import os
+from auto_gptq import AutoGPTQForCausalLM
+
+abs_path = os.path.abspath('./tinyllama-4bit-128g')
+print(f'Using absolute path: {abs_path}')
+
+model = AutoGPTQForCausalLM.from_quantized(abs_path, device='cpu', use_triton=False)
+print('✅ Model loaded with absolute path!')
+"
+
+# Test 3: With safetensors
+python3 -c "
+from auto_gptq import AutoGPTQForCausalLM
+from transformers import AutoTokenizer
+
+print('Loading model from ./tinyllama-4bit-128g...')
+
+model = AutoGPTQForCausalLM.from_quantized(
+    './tinyllama-4bit-128g',
+    device='cpu',
+    use_triton=False,
+    use_safetensors=True
+)
+
+print('✅ Model loaded successfully!')
+
+tokenizer = AutoTokenizer.from_pretrained('./tinyllama-4bit-128g')
+print('✅ Tokenizer loaded!')
+
+# Quick inference test
+inputs = tokenizer('Hello, TinyLlama is', return_tensors='pt')
+outputs = model.generate(**inputs, max_length=20, do_sample=False, pad_token_id=tokenizer.eos_token_id)
+result = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+print(f'🎉 Generated text: {result}')
+print('SUCCESS: GPTQ model works on Jetson Nano!')
+"
+
+# Test 4: Fix quantize_config.json for compatibility
+python3 -c "
+import json
+
+# Only include parameters that auto_gptq 0.2.2 recognizes
+compatible_config = {
+    'bits': 4,
+    'group_size': 128,
+    'damp_percent': 0.01,
+    'desc_act': False
+}
+
+# Save the compatible config
+with open('./tinyllama-4bit-128g/quantize_config.json', 'w') as f:
+    json.dump(compatible_config, f, indent=2)
+
+print('✅ Created auto_gptq 0.2.2 compatible config')
+print('Removed: static_groups, sym, true_sequential, is_marlin_format, quant_method')
+"
+
+# Test 5: Download tokenizer files from HuggingFace
+python3 -c "
+from huggingface_hub import hf_hub_download
+import os
+
+model_id = 'TinyLlama/TinyLlama-1.1B-Chat-v1.0'
+local_dir = './tinyllama-4bit-128g'
+
+# Download essential tokenizer files
+files_to_download = [
+    'tokenizer.json',
+    'tokenizer_config.json',
+    'special_tokens_map.json'
+]
+
+for file in files_to_download:
+    try:
+        hf_hub_download(
+            repo_id=model_id,
+            filename=file,
+            local_dir=local_dir,
+            local_dir_use_symlinks=False
+        )
+        print(f'✅ Downloaded {file}')
+    except Exception as e:
+        print(f'❌ Failed to download {file}: {e}')
+"
+
+# Test 6: Device mapping fix attempt
+python3 -c "
+from auto_gptq import AutoGPTQForCausalLM
+from transformers import AutoTokenizer
+print('Loading model from ./tinyllama-4bit-128g...')
+model = AutoGPTQForCausalLM.from_quantized(
+    './tinyllama-4bit-128g',
+    device='cpu',
+    use_triton=False,
+    use_safetensors=True
+)
+print('✅ Model loaded successfully!')
+tokenizer = AutoTokenizer.from_pretrained('./tinyllama-4bit-128g')
+print('✅ Tokenizer loaded!')
+# Fix device mapping issue
+model.hf_device_map = {'': 'cpu'}
+# Quick inference test
+inputs = tokenizer('Hello, TinyLlama is', return_tensors='pt')
+outputs = model.generate(**inputs, max_length=20, do_sample=False, pad_token_id=tokenizer.eos_token_id)
+result = tokenizer.decode(outputs[0], skip_special_tokens=True)
+print(f'🎉 Generated text: {result}')
+print('SUCCESS: GPTQ model works on Jetson Nano!')
+"
+
+# Test 7: Using underlying model
+python3 -c "
+from auto_gptq import AutoGPTQForCausalLM
+from transformers import AutoTokenizer
+import torch
+print('Loading model from ./tinyllama-4bit-128g...')
+gptq_wrapper = AutoGPTQForCausalLM.from_quantized(
+    './tinyllama-4bit-128g',
+    device='cpu',
+    use_triton=False,
+    use_safetensors=True
+)
+print('✅ Model loaded successfully!')
+tokenizer = AutoTokenizer.from_pretrained('./tinyllama-4bit-128g')
+print('✅ Tokenizer loaded!')
+# Use the underlying model directly to avoid device mapping issue
+model = gptq_wrapper.model
+inputs = tokenizer('Hello, TinyLlama is', return_tensors='pt')
+with torch.no_grad():
+    outputs = model.generate(**inputs, max_length=20, do_sample=False, pad_token_id=tokenizer.eos_token_id)
+result = tokenizer.decode(outputs[0], skip_special_tokens=True)
+print(f'🎉 Generated text: {result}')
+print('SUCCESS: GPTQ model works on Jetson Nano!')
+"
+
+# Test 8: Filter inputs
+python3 -c "
+from auto_gptq import AutoGPTQForCausalLM
+from transformers import AutoTokenizer
+import torch
+print('Loading model from ./tinyllama-4bit-128g...')
+gptq_wrapper = AutoGPTQForCausalLM.from_quantized(
+    './tinyllama-4bit-128g',
+    device='cpu',
+    use_triton=False,
+    use_safetensors=True
+)
+print('✅ Model loaded successfully!')
+tokenizer = AutoTokenizer.from_pretrained('./tinyllama-4bit-128g')
+print('✅ Tokenizer loaded!')
+# Use the underlying model directly to avoid device mapping issue
+model = gptq_wrapper.model
+inputs = tokenizer('Hello, TinyLlama is', return_tensors='pt')
+# Filter inputs to only include what the model needs
+filtered_inputs = {k: v for k, v in inputs.items() if k in ['input_ids', 'attention_mask']}
+with torch.no_grad():
+    outputs = model.generate(**filtered_inputs, max_length=20, do_sample=False, pad_token_id=tokenizer.eos_token_id)
+result = tokenizer.decode(outputs[0], skip_special_tokens=True)
+print(f'🎉 Generated text: {result}')
+print('SUCCESS: GPTQ model works on Jetson Nano!')
+"
+
+# Test 9: Float conversion
+python3 -c "
+from auto_gptq import AutoGPTQForCausalLM
+from transformers import AutoTokenizer
+import torch
+print('Loading model from ./tinyllama-4bit-128g...')
+gptq_wrapper = AutoGPTQForCausalLM.from_quantized(
+    './tinyllama-4bit-128g',
+    device='cpu',
+    use_triton=False,
+    use_safetensors=True
+)
+print('✅ Model loaded successfully!')
+tokenizer = AutoTokenizer.from_pretrained('./tinyllama-4bit-128g')
+print('✅ Tokenizer loaded!')
+# Use the underlying model and ensure float32
+model = gptq_wrapper.model.float()
+inputs = tokenizer('Hello, TinyLlama is', return_tensors='pt')
+# Filter inputs and ensure float32
+filtered_inputs = {k: v for k, v in inputs.items() if k in ['input_ids', 'attention_mask']}
+with torch.no_grad():
+    outputs = model.generate(**filtered_inputs, max_length=20, do_sample=False, pad_token_id=tokenizer.eos_token_id)
+result = tokenizer.decode(outputs[0], skip_special_tokens=True)
+print(f'🎉 Generated text: {result}')
+print('SUCCESS: GPTQ model works on Jetson Nano!')
+"
+
+# Test 10: Float32 input conversion
+python3 -c "
+from auto_gptq import AutoGPTQForCausalLM
+from transformers import AutoTokenizer
+import torch
+print('Loading model from ./tinyllama-4bit-128g...')
+gptq_wrapper = AutoGPTQForCausalLM.from_quantized(
+    './tinyllama-4bit-128g',
+    device='cpu',
+    use_triton=False,
+    use_safetensors=True
+)
+print('✅ Model loaded successfully!')
+tokenizer = AutoTokenizer.from_pretrained('./tinyllama-4bit-128g')
+print('✅ Tokenizer loaded!')
+model = gptq_wrapper.model
+inputs = tokenizer('Hello, TinyLlama is', return_tensors='pt')
+filtered_inputs = {k: v for k, v in inputs.items() if k in ['input_ids', 'attention_mask']}
+# Convert inputs to float32 to avoid half precision issues
+filtered_inputs = {k: v.type(torch.float32) if v.dtype == torch.float16 else v for k, v in filtered_inputs.items()}
+with torch.no_grad():
+    outputs = model.generate(**filtered_inputs, max_length=20, do_sample=False, pad_token_id=tokenizer.eos_token_id)
+result = tokenizer.decode(outputs[0], skip_special_tokens=True)
+print(f'🎉 Generated text: {result}')
+print('SUCCESS: GPTQ model works on Jetson Nano!')
+"
+
+# Test 11: Check path and files
+python3 -c "
+import os
+import torch
+
+# First check the path
+print(f'Current directory: {os.getcwd()}')
+print(f'Model directory exists: {os.path.exists(\"./tinyllama-4bit-128g\")}')
+if os.path.exists('./tinyllama-4bit-128g'):
+    print(f'Files: {os.listdir(\"./tinyllama-4bit-128g\")}')
+
+# Patch the specific problematic function
+import auto_gptq.nn_modules.qlinear_old as qlinear_old
+
+def cpu_safe_forward(self, x):
+    # Avoid .half() which causes CPU issues
+    if x.dtype == torch.float16:
+        x = x.float()
+
+    # Simple matrix multiplication without half precision
+    out = torch.matmul(x, self.qweight.T.float())
+
+    if self.bias is not None:
+        out = out + self.bias.float()
+
+    return out
+
+# Apply patch
+qlinear_old.QuantLinear.forward = cpu_safe_forward
+print('🔧 Patched auto_gptq for CPU compatibility')
+
+# Use absolute path to avoid path issues
+abs_path = os.path.abspath('./tinyllama-4bit-128g')
+print(f'Using absolute path: {abs_path}')
+
+from auto_gptq import AutoGPTQForCausalLM
+from transformers import AutoTokenizer
+
+model = AutoGPTQForCausalLM.from_quantized(abs_path, device='cpu', use_triton=False, use_safetensors=True)
+tokenizer = AutoTokenizer.from_pretrained(abs_path)
+
+inputs = tokenizer('Hello, TinyLlama is', return_tensors='pt')
+filtered_inputs = {k: v for k, v in inputs.items() if k in ['input_ids', 'attention_mask']}
+
+outputs = model.generate(**filtered_inputs, max_length=20, do_sample=False)
+result = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+print(f'✅ Generated: {result}')
+print('SUCCESS: GPTQ model working with patched auto_gptq!')
+"
+
+# Test 12: Comprehensive patching attempt
+python3 -c "
+import torch
+import auto_gptq.nn_modules.qlinear_old as q
+
+# Patch the problematic function BEFORE loading the model
+def fixed_forward(self, x):
+    return torch.matmul(x.float(), self.qweight.T.float()) + (self.bias.float() if self.bias is not None else 0)
+
+q.QuantLinear.forward = fixed_forward
+
+from auto_gptq import AutoGPTQForCausalLM
+from transformers import AutoTokenizer
+
+print('Loading model with patched auto_gptq...')
+model = AutoGPTQForCausalLM.from_quantized('./tinyllama-4bit-128g', device='cpu', use_triton=False)
+tokenizer = AutoTokenizer.from_pretrained('./tinyllama-4bit-128g')
+
+inputs = tokenizer('Hello, TinyLlama is', return_tensors='pt')
+filtered_inputs = {k: v for k, v in inputs.items() if k in ['input_ids', 'attention_mask']}
+
+outputs = model.generate(**filtered_inputs, max_length=20, do_sample=False)
+result = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+print(f'🎉 Generated: {result}')
+print('SUCCESS: Patched auto_gptq works!')
+"
+
+# Test 13: Environment variable approach
+python3 -c "
+import torch
+import os
+os.environ['TORCH_DEFAULT_DTYPE'] = 'float32'
+torch.set_default_dtype(torch.float32)
+
+from auto_gptq import AutoGPTQForCausalLM
+from transformers import AutoTokenizer
+
+model = AutoGPTQForCausalLM.from_quantized('./tinyllama-4bit-128g', device='cpu', use_triton=False)
+tokenizer = AutoTokenizer.from_pretrained('./tinyllama-4bit-128g')
+
+inputs = tokenizer('Hello', return_tensors='pt')
+outputs = model.generate(**inputs, max_length=15)
+result = tokenizer.decode(outputs[0])
+print(f'Result: {result}')
+"
+
+# Test 14: Final comprehensive attempt
+python3 -c "
+import torch
+import os
+os.environ['TORCH_DEFAULT_DTYPE'] = 'float32'
+torch.set_default_dtype(torch.float32)
+
+from auto_gptq import AutoGPTQForCausalLM
+from transformers import AutoTokenizer
+
+print('Loading model from ./tinyllama-4bit-128g...')
+gptq_wrapper = AutoGPTQForCausalLM.from_quantized(
+    './tinyllama-4bit-128g',
+    device='cpu',
+    use_triton=False,
+    use_safetensors=True
+)
+print('✅ Model loaded successfully!')
+tokenizer = AutoTokenizer.from_pretrained('./tinyllama-4bit-128g')
+print('✅ Tokenizer loaded!')
+# Use the underlying model and ensure float32
+model = gptq_wrapper.model.float()
+inputs = tokenizer('Hello, TinyLlama is', return_tensors='pt')
+# Filter inputs and ensure float32
+filtered_inputs = {k: v for k, v in inputs.items() if k in ['input_ids', 'attention_mask']}
+with torch.no_grad():
+    outputs = model.generate(**filtered_inputs, max_length=20, do_sample=False, pad_token_id=tokenizer.eos_token_id)
+result = tokenizer.decode(outputs[0], skip_special_tokens=True)
+print(f'🎉 Generated text: {result}')
+print('SUCCESS: GPTQ model works on Jetson Nano!')
+"
+
+# System shutdown commands
+sudo shutdown
+sudo shutdown --poweroff

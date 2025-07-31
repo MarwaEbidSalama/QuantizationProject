@@ -1,0 +1,19 @@
+# Core for GPTQModel
+torch==2.7.1+cu128
+transformers==4.53.3
+gptqmodel==2.2.0
+tokenizers==0.21.2
+safetensors==0.5.3
+accelerate==1.9.0
+huggingface-hub==0.34.1
+
+# Helpful libraries for I/O and tracking
+peft==0.16.0
+datasets==4.0.0
+protobuf==6.31.1
+filelock==3.13.1
+fsspec==2024.6.1
+
+# Optional extras for CLI UX
+tqdm==4.67.1
+rich==13.9.4
