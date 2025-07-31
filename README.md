@@ -30,6 +30,7 @@ Link to the docu: https://www.nvidia.com/de-de/autonomous-machines/embedded-syst
 - txt files are the output of running tegrastats on the Jetson nano
 - csv files contain the data from the tegrastats so that they can be processed furhter
 - LLM_Benchmarks.ipynb contains the data analysis code for evaluating the LLMs on Jetson Nano
+- LLM_Benchmarks.ipynb adds average RAM consumption for each model variant (I am aware that adding another file verion (with (1) for example is not the right way; usually you would simply add those things in the original file)
 - Note: LLM_Benchmarks.ipynb can be run in Google Colab for example. It can be the case that the CSV files must be added /uploaded manually into Colab workspace and that the path of pandas import needs to be adjusted
 
 ## New_2_Quantize_tinyLlama (3).ipynb File
