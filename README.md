@@ -46,3 +46,74 @@ Link to the docu: https://www.nvidia.com/de-de/autonomous-machines/embedded-syst
 - to run one model, use ``ollama run model_name --verbose`` and replace model_name with a name that is listed in ``ollama list`` command 
 - you will be able to chat with the model
 
+
+## GPTQ
+ GPTQ (Generative Pre-trained Transformer Quantization) models, specifically focusing on TinyLlama quantization for edge deployment on devices like the Jetson Nano.
+
+### Folder Structure
+#### `/gptq`
+Contains general GPTQ-related files and utilities.
+
+#### `/GPTQModel`
+Implementation using the GPTQModel library:
+- **`gptq_phi1_5.ipynb`** - Jupyter notebook demonstrating GPTQ quantization with Phi-1.5 model
+- **`gptq_tinyllama.ipynb`** - Jupyter notebook for TinyLlama GPTQ quantization experiments
+- **`gptqmodel_requirements.txt`** - Python dependencies for GPTQModel library implementation
+
+#### `/auto_gptq`
+Implementation using the AutoGPTQ library:
+- **`auto_gptq_requirements.txt`** - Python dependencies for AutoGPTQ library
+- **`auto_gqtp_2bit.ipynb`** - 2-bit quantization experiments with AutoGPTQ
+- **`auto_gqtp_4bit.ipynb`** - 4-bit quantization experiments with AutoGPTQ  
+- **`auto_gqtp_8bit.ipynb`** - 8-bit quantization experiments with AutoGPTQ
+- **`bash_commands.txt`** - Terminal commands used during model testing and troubleshooting
+
+
+### Libraries Compared
+
+#### AutoGPTQ
+- More established quantization library
+- Better GPU acceleration support
+- Some CPU compatibility issues on ARM devices
+
+#### GPTQModel  
+- Newer quantization implementation
+- Potentially better CPU support
+- Active development for edge devices
+
+### Getting Started
+
+1. **Choose your quantization library:**
+   ```bash
+   # For AutoGPTQ
+   pip install -r auto_gptq/auto_gptq_requirements.txt
+   
+   # For GPTQModel
+   pip install -r GPTQModel/gptqmodel_requirements.txt
+   ```
+
+2. **Run the notebooks:**
+   - Start with 4-bit quantization for balanced performance
+   - Try different bit levels based on your hardware constraints
+   - Compare results between AutoGPTQ and GPTQModel implementations
+
+3. **For edge deployment:**
+   - Check `bash_commands.txt` for troubleshooting common issues
+   - Test on your target hardware (Jetson Nano, Raspberry Pi, etc.)
+
+### Models Tested
+
+- **TinyLlama-1.1B-Chat-v1.0**: Lightweight conversational model
+- **Phi-1.5**: Microsoft's efficient language model
+
+### Known Issues
+
+- Half-precision CPU operations may fail on some ARM devices
+- AutoGPTQ 0.2.2 has compatibility issues with older PyTorch versions
+- Device mapping problems when running quantized models on CPU
+
+
+## 📄 License
+
+MIT
+
